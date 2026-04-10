@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = ({ isAuthenticated = false, user = null }) => {
@@ -15,25 +16,25 @@ const Navbar = ({ isAuthenticated = false, user = null }) => {
   return (
     <nav className={`navbar ${scrolled ? 'nav-scrolled' : ''}`}>
       <div className="nav-container">
-        <a href="/" className="nav-brand">
+        <Link to="/" className="nav-brand">
           <span className="brand-icon">✧</span>
           <span className="brand-text">FOSSEE Workshops</span>
-        </a>
+        </Link>
 
         <ul className="nav-links">
-          <li><a href="/" className="nav-item">Home</a></li>
-          <li><a href="/statistics" className="nav-item">Statistics</a></li>
+          <li><Link to="/" className="nav-item">Home</Link></li>
+          <li><Link to="/statistics" className="nav-item">Statistics</Link></li>
           
           {isAuthenticated && (
             <>
               {user?.isInstructor && (
-                <li><a href="/team-stats" className="nav-item">Team Stats</a></li>
+                <li><Link to="/team-stats" className="nav-item">Team Stats</Link></li>
               )}
-              <li><a href="/status" className="nav-item">Status</a></li>
+              <li><Link to="/status" className="nav-item">Status</Link></li>
               {!user?.isInstructor && (
-                <li><a href="/propose" className="nav-item nav-highlight">Propose Workshop</a></li>
+                <li><Link to="/propose" className="nav-item nav-highlight">Propose Workshop</Link></li>
               )}
-              <li><a href="/types" className="nav-item">Workshop Types</a></li>
+              <li><Link to="/types" className="nav-item">Workshop Types</Link></li>
             </>
           )}
         </ul>
@@ -47,7 +48,7 @@ const Navbar = ({ isAuthenticated = false, user = null }) => {
               <span className="user-name">{user?.name || 'User'}</span>
             </div>
           ) : (
-            <a href="/login" className="btn-primary">Sign In</a>
+            <Link to="/login" className="btn-primary">Sign In</Link>
           )}
         </div>
       </div>
