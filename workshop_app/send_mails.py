@@ -125,17 +125,17 @@ def send_email(	request, call_on,
 					In case of queries regarding workshop booking(s),
 					revert to this email.""".format(PRODUCTION_URL, key))
 
-		logging.info("New Registration from: %s", request.user.email)
+		logging.info("New Registration from: %s", other_email)
 		try:
 			send_mail(
 				"Coordinator Registration at FOSSEE, IIT Bombay", message, SENDER_EMAIL,
-				[request.user.email], fail_silently=True
+				[other_email], fail_silently=True
 				)
 
 		except Exception:
 			send_smtp_email(request=request,
 				subject="Coordinator Registration - FOSSEE, IIT Bombay",
-				message=message, other_email=request.user.email,
+				message=message, other_email=other_email,
 				)
 
 	elif call_on == "Booking":
