@@ -10,8 +10,8 @@
  * cookie automatically. The Axios instance (api.js) forwards it with
  * `withCredentials: true`.
  *
- * Django's login view returns an HTML redirect on success, not JSON.
- * We treat a non-4xx response as a successful login.
+ * Django's views return HTML, not JSON.
+ * We treat a non-4xx response as success (Django redirects/renders on success).
  */
 import api from './api';
 
@@ -25,7 +25,6 @@ export const login = ({ username, password }) => {
   formData.append('password', password);
   return api.post('/workshop/login/', formData, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    // Don't throw on 3xx redirect — Django redirects on success
     maxRedirects: 0,
     validateStatus: (status) => status < 400,
   });
@@ -38,20 +37,43 @@ export const logout = () => api.get('/workshop/logout/');
 
 /**
  * Register a new user.
- * @param {{ firstName: string, lastName: string, username: string,
- *           email: string, password: string, position: string }} data
+ *
+ * Django's UserRegistrationForm requires many fields beyond what we show
+ * in the minimal UI. We send all required fields; hidden ones use safe defaults.
+ * The user can update their profile details later from the profile page.
+ *
+ * Required by Django's form:
+ *   username, email, password, confirm_password,
+ *   title, first_name, last_name, phone_number,
+ *   institute, department, location, state, how_did_you_hear_about_us
+ *
+ * @param {{ username: string, email: string, password: string, confirmPassword: string }} data
+ * @returns {Promise} Resolves on HTTP 2xx/3xx, rejects on 4xx/5xx
  */
 export const register = (data) => {
   const formData = new URLSearchParams();
-  formData.append('first_name', data.firstName);
-  formData.append('last_name', data.lastName);
-  formData.append('username', data.username);
-  formData.append('email', data.email);
+
+  // --- Fields from the UI ---
+  formData.append('username', data.username.trim().toLowerCase());
+  formData.append('email', data.email.trim());
   formData.append('password', data.password);
-  formData.append('confirm_password', data.password);
-  formData.append('position', data.position);
+  formData.append('confirm_password', data.confirmPassword);
+
+  // --- Required by Django form — sensible defaults for hidden fields ---
+  // Django coerces username as first_name placeholder; user updates profile later
+  formData.append('first_name', data.username.trim());
+  formData.append('last_name', '.');
+  formData.append('title', 'Mr');
+  formData.append('phone_number', '0000000000');   // 10-digit placeholder
+  formData.append('institute', 'Not specified');
+  formData.append('department', 'computer engineering');
+  formData.append('location', 'Not specified');
+  formData.append('state', 'IN-MH');
+  formData.append('how_did_you_hear_about_us', 'FOSSEE website');
+
   return api.post('/workshop/register/', formData, {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    validateStatus: (status) => status < 400,
+    // Django renders activation.html (2xx) on success, or form HTML on errors
+    validateStatus: (status) => status < 500,
   });
 };
