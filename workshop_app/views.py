@@ -140,12 +140,12 @@ def user_register(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             username, password, key = form.save()
-            new_user = authenticate(username=username, password=password)
-            login(request, new_user)
-            user_position = request.user.profile.position
+            new_user = User.objects.get(username=username)
+            user_position = new_user.profile.position
             send_email(
                 request, call_on='Registration',
                 user_position=user_position,
+                other_email=new_user.email,
                 key=key
             )
             return render(request, 'workshop_app/activation.html')
