@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { register } from '../services/authService';
 import './Register.css';
 
 const initialState = {
@@ -52,6 +53,8 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [serverError, setServerError] = useState('');
   const [showPwd, setShowPwd] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -81,8 +84,11 @@ export default function Register() {
     setErrors((prev) => ({ ...prev, [name]: validate(name, value) }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setServerError('');
+
+    // Run all client-side validations first
     const allTouched = { username: true, email: true, password: true, confirmPassword: true };
     setTouched(allTouched);
     const newErrors = {
@@ -92,9 +98,40 @@ export default function Register() {
       confirmPassword: rules.confirmPassword(form.confirmPassword, form),
     };
     setErrors(newErrors);
-    const isValid = Object.values(newErrors).every((e) => !e);
-    if (isValid) {
-      setSubmitted(true);
+    const isValid = Object.values(newErrors).every((err) => !err);
+    if (!isValid) return;
+
+    // Submit to Django backend
+    setLoading(true);
+    try {
+      const res = await register(form);
+
+      // Django returns a 200 HTML page on success (activation.html)
+      // and also a 200 with error-form HTML on duplicate username/email.
+      // We inspect the response body text to distinguish the two.
+      const html = typeof res.data === 'string' ? res.data : '';
+
+      if (html.includes('already exists') || html.includes('Username already')) {
+        // Django echoed validation errors back in HTML
+        if (html.includes('email') && html.includes('already')) {
+          setServerError('An account with this email already exists. Please use a different email.');
+        } else {
+          setServerError('This username is already taken. Please choose a different one.');
+        }
+      } else if (res.status >= 200 && res.status < 400) {
+        // Genuine success — activation email sent
+        setSubmitted(true);
+      } else {
+        setServerError('Registration failed. Please try again.');
+      }
+    } catch (err) {
+      if (!err.response) {
+        setServerError('Cannot reach the server. Make sure the Django backend is running on port 8000.');
+      } else {
+        setServerError('Registration failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -105,8 +142,10 @@ export default function Register() {
       <div className="reg-page">
         <div className="reg-card reg-success">
           <div className="success-icon">✓</div>
-          <h2>Account Created!</h2>
-          <p>Check your email to activate your account before signing in.</p>
+          <h2>Registration Successful!</h2>
+          <p>
+            Registration successful. Please check your email to activate your account.
+          </p>
           <Link to="/login" className="reg-btn-full">Go to Login</Link>
         </div>
       </div>
@@ -258,9 +297,21 @@ export default function Register() {
             )}
           </div>
 
+          {/* Server-side error banner */}
+          {serverError && (
+            <div className="reg-server-error" role="alert">
+              <span className="reg-server-error-icon">⚠</span>
+              <span>{serverError}</span>
+            </div>
+          )}
+
           {/* Submit */}
-          <button type="submit" className="reg-btn-full">
-            Create Account
+          <button type="submit" className="reg-btn-full" disabled={loading}>
+            {loading ? (
+              <span className="reg-spinner">Registering…</span>
+            ) : (
+              'Create Account'
+            )}
           </button>
         </form>
 
