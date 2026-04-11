@@ -249,7 +249,7 @@
 
   .nav-panel {
     position: static;
-    display: flex;
+    display: flex !important; /* Force display on desktop */
     align-items: center;
     justify-content: flex-end;
     flex: 1;
@@ -258,6 +258,8 @@
     border: 0;
     box-shadow: none;
     padding: 0;
+    opacity: 1;
+    transform: none;
   }
 
   .nav-links-shell {
