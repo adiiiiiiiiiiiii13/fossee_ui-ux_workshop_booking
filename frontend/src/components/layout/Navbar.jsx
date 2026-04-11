@@ -1,55 +1,111 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import './Navbar.css';
 
-const Navbar = ({ isAuthenticated = false, user = null }) => {
-  const [scrolled, setScrolled] = useState(false);
+const publicLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/statistics', label: 'Statistics' },
+  { to: '/types', label: 'Workshop Types' },
+];
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+const Navbar = ({ user = null }) => {
+  const { logoutUser } = useAuth();
+  const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const links = useMemo(() => {
+    if (!user) {
+      return publicLinks;
+    }
+
+    const authLinks = [
+      { to: user.isInstructor ? '/dashboard' : '/status', label: user.isInstructor ? 'Dashboard' : 'My Status' },
+      { to: '/statistics', label: 'Statistics' },
+      { to: '/types', label: 'Workshop Types' },
+      { to: '/profile', label: 'Profile' },
+    ];
+
+    if (user.isInstructor) {
+      authLinks.splice(2, 0, { to: '/team-stats', label: 'Team Stats' });
+    } else {
+      authLinks.splice(2, 0, { to: '/propose', label: 'Propose Workshop' });
+    }
+
+    return authLinks;
+  }, [user]);
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setMenuOpen(false);
+    navigate('/');
+  };
 
   return (
-    <nav className={`navbar ${scrolled ? 'nav-scrolled' : ''}`}>
+    <nav className="navbar">
       <div className="nav-container">
-        <Link to="/" className="nav-brand">
-          <span className="brand-icon">✧</span>
-          <span className="brand-text">FOSSEE Workshops</span>
+        <Link to="/" className="nav-brand" onClick={() => setMenuOpen(false)}>
+          <span className="brand-mark">FW</span>
+          <span>
+            <strong>FOSSEE Workshops</strong>
+            <small>Booking and impact dashboard</small>
+          </span>
         </Link>
 
-        <ul className="nav-links">
-          <li><Link to="/" className="nav-item">Home</Link></li>
-          <li><Link to="/statistics" className="nav-item">Statistics</Link></li>
-          
-          {isAuthenticated && (
-            <>
-              {user?.isInstructor && (
-                <li><Link to="/team-stats" className="nav-item">Team Stats</Link></li>
-              )}
-              <li><Link to="/status" className="nav-item">Status</Link></li>
-              {!user?.isInstructor && (
-                <li><Link to="/propose" className="nav-item nav-highlight">Propose Workshop</Link></li>
-              )}
-              <li><Link to="/types" className="nav-item">Workshop Types</Link></li>
-            </>
-          )}
-        </ul>
+        <button
+          type="button"
+          className={`nav-toggle ${menuOpen ? 'is-active' : ''}`}
+          onClick={() => setMenuOpen((current) => !current)}
+          aria-expanded={menuOpen}
+          aria-label="Toggle navigation"
+        >
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+          <span className="hamburger-line" />
+        </button>
 
-        <div className="nav-actions">
-          {isAuthenticated ? (
-            <div className="user-profile">
-              <div className="avatar">
-                {user?.name?.charAt(0) || 'U'}
+        <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
+          <div className="nav-links-shell">
+            <ul className="nav-links">
+              {links.map((link) => (
+                <li key={link.to} className="nav-link-item">
+                  <NavLink
+                    to={link.to}
+                    className={({ isActive }) => `nav-item ${isActive ? 'is-active' : ''}`}
+                    onClick={() => setMenuOpen(false)}
+                  >
+                    {link.label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="nav-actions">
+            {user ? (
+              <>
+                <div className="user-profile">
+                  <div className="avatar">{user.name?.charAt(0) || 'U'}</div>
+                  <div>
+                    <strong>{user.name}</strong>
+                    <small>{user.isInstructor ? 'Instructor' : 'Coordinator'}</small>
+                  </div>
+                </div>
+                <button type="button" className="nav-button nav-button-muted" onClick={handleLogout}>
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <div className="nav-guest-actions">
+                <Link to="/register" className="nav-button nav-button-muted" onClick={() => setMenuOpen(false)}>
+                  Register
+                </Link>
+                <Link to="/login" className="nav-button" onClick={() => setMenuOpen(false)}>
+                  Sign In
+                </Link>
               </div>
-              <span className="user-name">{user?.name || 'User'}</span>
-            </div>
-          ) : (
-            <Link to="/login" className="btn-primary">Sign In</Link>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </nav>
