@@ -1,326 +1,143 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { register } from '../services/authService';
-import './Register.css';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
+import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../services/api';
+import { getChoices } from '../services/workshopService';
 
-const initialState = {
+const initialForm = {
   username: '',
   email: '',
   password: '',
-  confirmPassword: '',
+  confirm_password: '',
+  title: '',
+  first_name: '',
+  last_name: '',
+  phone_number: '',
+  institute: '',
+  department: '',
+  location: '',
+  state: '',
+  how_did_you_hear_about_us: '',
 };
-
-const rules = {
-  username: (v) => {
-    if (!v) return 'Username is required.';
-    if (!/^[a-zA-Z0-9._]+$/.test(v)) return 'Only letters, digits, period and underscore allowed.';
-    if (v.length < 3) return 'Username must be at least 3 characters.';
-    return '';
-  },
-  email: (v) => {
-    if (!v) return 'Email is required.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email address.';
-    return '';
-  },
-  password: (v) => {
-    if (!v) return 'Password is required.';
-    if (v.length < 8) return 'Password must be at least 8 characters.';
-    if (!/[A-Z]/.test(v)) return 'Must include at least one uppercase letter.';
-    if (!/[0-9]/.test(v)) return 'Must include at least one number.';
-    return '';
-  },
-  confirmPassword: (v, form) => {
-    if (!v) return 'Please confirm your password.';
-    if (v !== form.password) return 'Passwords do not match.';
-    return '';
-  },
-};
-
-const getStrength = (pwd) => {
-  let score = 0;
-  if (pwd.length >= 8) score++;
-  if (/[A-Z]/.test(pwd)) score++;
-  if (/[0-9]/.test(pwd)) score++;
-  if (/[^A-Za-z0-9]/.test(pwd)) score++;
-  return score; // 0–4
-};
-
-const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'];
-const strengthColor = ['', '#ef4444', '#f97316', '#eab308', '#22c55e'];
 
 export default function Register() {
-  const [form, setForm] = useState(initialState);
+  const { registerUser } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState(initialForm);
+  const [choices, setChoices] = useState({ titles: [], departments: [], states: [], sources: [] });
   const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [serverError, setServerError] = useState('');
-  const [showPwd, setShowPwd] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [banner, setBanner] = useState('');
 
-  const validate = (field, value) => {
-    const fn = rules[field];
-    return fn ? fn(value, form) : '';
+  useEffect(() => {
+    getChoices()
+      .then((data) => {
+        setChoices(data);
+        setForm((current) => ({
+          ...current,
+          title: data.titles[0]?.value || '',
+          department: data.departments[0]?.value || '',
+          state: data.states[0]?.value || '',
+          how_did_you_hear_about_us: data.sources[0]?.value || '',
+        }));
+      })
+      .catch(() => {
+        setBanner('Registration choices could not be loaded. Refresh and try again.');
+      });
+  }, []);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: null }));
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (touched[name]) {
-      setErrors((prev) => ({ ...prev, [name]: validate(name, value) }));
-    }
-    // Re-validate confirmPassword when password changes
-    if (name === 'password' && touched.confirmPassword) {
-      setErrors((prev) => ({
-        ...prev,
-        confirmPassword: rules.confirmPassword(form.confirmPassword, { ...form, password: value }),
-      }));
-    }
-  };
-
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
-    setErrors((prev) => ({ ...prev, [name]: validate(name, value) }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setServerError('');
-
-    // Run all client-side validations first
-    const allTouched = { username: true, email: true, password: true, confirmPassword: true };
-    setTouched(allTouched);
-    const newErrors = {
-      username: rules.username(form.username),
-      email: rules.email(form.email),
-      password: rules.password(form.password),
-      confirmPassword: rules.confirmPassword(form.confirmPassword, form),
-    };
-    setErrors(newErrors);
-    const isValid = Object.values(newErrors).every((err) => !err);
-    if (!isValid) return;
-
-    // Submit to Django backend
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
+    setBanner('');
+    setErrors({});
+
     try {
-      const res = await register(form);
-
-      // Django returns a 200 HTML page on success (activation.html)
-      // and also a 200 with error-form HTML on duplicate username/email.
-      // We inspect the response body text to distinguish the two.
-      const html = typeof res.data === 'string' ? res.data : '';
-
-      if (html.includes('already exists') || html.includes('Username already')) {
-        // Django echoed validation errors back in HTML
-        if (html.includes('email') && html.includes('already')) {
-          setServerError('An account with this email already exists. Please use a different email.');
-        } else {
-          setServerError('This username is already taken. Please choose a different one.');
-        }
-      } else if (res.status >= 200 && res.status < 400) {
-        // Genuine success — activation email sent
-        setSubmitted(true);
-      } else {
-        setServerError('Registration failed. Please try again.');
-      }
+      const result = await registerUser(form);
+      // Redirect to activation pending page with state
+      navigate('/activation-pending', {
+        state: {
+          devActivationUrl: result?.devActivationUrl || '',
+          email: form.email,
+        },
+      });
     } catch (err) {
-      if (!err.response) {
-        setServerError('Cannot reach the server. Make sure the Django backend is running on port 8000.');
-      } else {
-        setServerError('Registration failed. Please try again.');
-      }
+      const fieldErrors = err?.response?.data?.errors || {};
+      const detail = Object.values(fieldErrors)
+        .flat()
+        .filter(Boolean)
+        .join(' ');
+      const headline = getErrorMessage(err, 'Registration failed.');
+      setBanner(detail ? `${headline} ${detail}`.trim() : headline);
+      setErrors(fieldErrors);
     } finally {
       setLoading(false);
     }
   };
 
-  const strength = getStrength(form.password);
-
-  if (submitted) {
-    return (
-      <div className="reg-page">
-        <div className="reg-card reg-success">
-          <div className="success-icon">✓</div>
-          <h2>Registration Successful!</h2>
-          <p>
-            Registration successful. Please check your email to activate your account.
-          </p>
-          <Link to="/login" className="reg-btn-full">Go to Login</Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="reg-page">
-      <div className="reg-card">
-
-        {/* Header */}
-        <div className="reg-header">
-          <div className="reg-logo">✧</div>
-          <h1 className="reg-title">Create Account</h1>
-          <p className="reg-subtitle">Join FOSSEE Workshops today</p>
-        </div>
-
-        <form onSubmit={handleSubmit} noValidate className="reg-form">
-
-          {/* Username */}
-          <div className={`reg-field ${touched.username && errors.username ? 'has-error' : ''} ${touched.username && !errors.username && form.username ? 'has-success' : ''}`}>
-            <label htmlFor="username" className="reg-label">Username</label>
-            <div className="reg-input-wrap">
-              <span className="reg-icon">@</span>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                className="reg-input"
-                placeholder="john_doe"
-                value={form.username}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                autoComplete="username"
-              />
-              {touched.username && !errors.username && form.username && (
-                <span className="reg-check">✓</span>
-              )}
-            </div>
-            {touched.username && errors.username && (
-              <p className="reg-error">{errors.username}</p>
-            )}
-          </div>
-
-          {/* Email */}
-          <div className={`reg-field ${touched.email && errors.email ? 'has-error' : ''} ${touched.email && !errors.email && form.email ? 'has-success' : ''}`}>
-            <label htmlFor="email" className="reg-label">Email Address</label>
-            <div className="reg-input-wrap">
-              <span className="reg-icon">✉</span>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                className="reg-input"
-                placeholder="you@example.com"
-                value={form.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                autoComplete="email"
-              />
-              {touched.email && !errors.email && form.email && (
-                <span className="reg-check">✓</span>
-              )}
-            </div>
-            {touched.email && errors.email && (
-              <p className="reg-error">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Password */}
-          <div className={`reg-field ${touched.password && errors.password ? 'has-error' : ''} ${touched.password && !errors.password && form.password ? 'has-success' : ''}`}>
-            <label htmlFor="password" className="reg-label">Password</label>
-            <div className="reg-input-wrap">
-              <span className="reg-icon">⚿</span>
-              <input
-                id="password"
-                name="password"
-                type={showPwd ? 'text' : 'password'}
-                className="reg-input"
-                placeholder="Min. 8 chars, 1 uppercase, 1 number"
-                value={form.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                className="reg-toggle"
-                onClick={() => setShowPwd((s) => !s)}
-                aria-label="Toggle password visibility"
-              >
-                {showPwd ? '🙈' : '👁'}
-              </button>
-            </div>
-
-            {/* Strength meter */}
-            {form.password && (
-              <div className="strength-wrap">
-                <div className="strength-bar">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div
-                      key={i}
-                      className="strength-segment"
-                      style={{ background: i <= strength ? strengthColor[strength] : 'var(--border-color)' }}
-                    />
-                  ))}
-                </div>
-                <span className="strength-label" style={{ color: strengthColor[strength] }}>
-                  {strengthLabel[strength]}
-                </span>
-              </div>
-            )}
-
-            {touched.password && errors.password && (
-              <p className="reg-error">{errors.password}</p>
-            )}
-          </div>
-
-          {/* Confirm Password */}
-          <div className={`reg-field ${touched.confirmPassword && errors.confirmPassword ? 'has-error' : ''} ${touched.confirmPassword && !errors.confirmPassword && form.confirmPassword ? 'has-success' : ''}`}>
-            <label htmlFor="confirmPassword" className="reg-label">Confirm Password</label>
-            <div className="reg-input-wrap">
-              <span className="reg-icon">⚿</span>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type={showConfirm ? 'text' : 'password'}
-                className="reg-input"
-                placeholder="Re-enter your password"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                className="reg-toggle"
-                onClick={() => setShowConfirm((s) => !s)}
-                aria-label="Toggle confirm password visibility"
-              >
-                {showConfirm ? '🙈' : '👁'}
-              </button>
-              {touched.confirmPassword && !errors.confirmPassword && form.confirmPassword && (
-                <span className="reg-check">✓</span>
-              )}
-            </div>
-            {touched.confirmPassword && errors.confirmPassword && (
-              <p className="reg-error">{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          {/* Server-side error banner */}
-          {serverError && (
-            <div className="reg-server-error" role="alert">
-              <span className="reg-server-error-icon">⚠</span>
-              <span>{serverError}</span>
-            </div>
-          )}
-
-          {/* Submit */}
-          <button type="submit" className="reg-btn-full" disabled={loading}>
-            {loading ? (
-              <span className="reg-spinner">Registering…</span>
-            ) : (
-              'Create Account'
-            )}
-          </button>
-        </form>
-
-        <p className="reg-footer-text">
-          Already have an account?{' '}
-          <Link to="/login" className="reg-link">Sign in</Link>
+    <div className="auth-shell">
+      <Card className="auth-card auth-card-wide">
+        <p className="eyebrow">Coordinator registration</p>
+        <h1>Create your workshop account</h1>
+        <p className="muted-text">
+          Instructor access is still managed by admin. This form creates a coordinator account that can propose workshops.
         </p>
 
-      </div>
+        <form className="form-grid" onSubmit={handleSubmit}>
+          <Input label="Username" id="username" name="username" value={form.username} onChange={handleChange} error={errors.username?.[0]} required />
+          <Input label="Email" id="email" name="email" type="email" value={form.email} onChange={handleChange} error={errors.email?.[0]} required />
+          <Input label="Password" id="password" name="password" type="password" value={form.password} onChange={handleChange} error={errors.password?.[0]} required />
+          <Input label="Confirm password" id="confirm_password" name="confirm_password" type="password" value={form.confirm_password} onChange={handleChange} error={errors.confirm_password?.[0]} required />
+          <Select label="Title" id="title" name="title" value={form.title} onChange={handleChange} error={errors.title?.[0]} required>
+            {choices.titles.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </Select>
+          <Input label="First name" id="first_name" name="first_name" value={form.first_name} onChange={handleChange} error={errors.first_name?.[0]} required />
+          <Input label="Last name" id="last_name" name="last_name" value={form.last_name} onChange={handleChange} error={errors.last_name?.[0]} required />
+          <Input label="Phone number" id="phone_number" name="phone_number" value={form.phone_number} onChange={handleChange} error={errors.phone_number?.[0]} required />
+          <Input label="Institute" id="institute" name="institute" value={form.institute} onChange={handleChange} error={errors.institute?.[0]} required />
+          <Select label="Department" id="department" name="department" value={form.department} onChange={handleChange} error={errors.department?.[0]} required>
+            {choices.departments.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </Select>
+          <Input label="Location" id="location" name="location" value={form.location} onChange={handleChange} error={errors.location?.[0]} required />
+          <Select label="State" id="state" name="state" value={form.state} onChange={handleChange} error={errors.state?.[0]} required>
+            {choices.states.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </Select>
+          <Select
+            label="How did you hear about us?"
+            id="how_did_you_hear_about_us"
+            name="how_did_you_hear_about_us"
+            value={form.how_did_you_hear_about_us}
+            onChange={handleChange}
+            error={errors.how_did_you_hear_about_us?.[0]}
+            required
+            className="full-span"
+          >
+            {choices.sources.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+          </Select>
+
+          {banner ? <div className="message-banner message-error full-span">{banner}</div> : null}
+          <div className="full-span">
+            <Button type="submit" fullWidth disabled={loading}>
+              {loading ? 'Creating account...' : 'Create Account'}
+            </Button>
+          </div>
+        </form>
+
+        <p className="auth-footer">
+          Already registered? <Link to="/login">Sign in here</Link>.
+        </p>
+      </Card>
     </div>
   );
 }
