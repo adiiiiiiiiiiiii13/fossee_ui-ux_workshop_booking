@@ -1,6 +1,4 @@
 Django==4.2.11
 coverage
-pyaml
-django-recurrence
 python-decouple>=3.8
 pandas

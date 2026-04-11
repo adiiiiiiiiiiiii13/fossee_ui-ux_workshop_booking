@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import NavLinks from './NavLinks';
+import UserMenu from './UserMenu';
 import './Navbar.css';
 
 const publicLinks = [
@@ -15,9 +17,7 @@ const Navbar = ({ user = null }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const links = useMemo(() => {
-    if (!user) {
-      return publicLinks;
-    }
+    if (!user) return publicLinks;
 
     const authLinks = [
       { to: user.isInstructor ? '/dashboard' : '/status', label: user.isInstructor ? 'Dashboard' : 'My Status' },
@@ -41,10 +41,12 @@ const Navbar = ({ user = null }) => {
     navigate('/');
   };
 
+  const closeMenu = () => setMenuOpen(false);
+
   return (
     <nav className="navbar">
       <div className="nav-container">
-        <Link to="/" className="nav-brand" onClick={() => setMenuOpen(false)}>
+        <Link to="/" className="nav-brand" onClick={closeMenu}>
           <span className="brand-mark">FW</span>
           <span>
             <strong>FOSSEE Workshops</strong>
@@ -55,7 +57,7 @@ const Navbar = ({ user = null }) => {
         <button
           type="button"
           className={`nav-toggle ${menuOpen ? 'is-active' : ''}`}
-          onClick={() => setMenuOpen((current) => !current)}
+          onClick={() => setMenuOpen(current => !current)}
           aria-expanded={menuOpen}
           aria-label="Toggle navigation"
         >
@@ -65,46 +67,10 @@ const Navbar = ({ user = null }) => {
         </button>
 
         <div className={`nav-panel ${menuOpen ? 'is-open' : ''}`}>
-          <div className="nav-links-shell">
-            <ul className="nav-links">
-              {links.map((link) => (
-                <li key={link.to} className="nav-link-item">
-                  <NavLink
-                    to={link.to}
-                    className={({ isActive }) => `nav-item ${isActive ? 'is-active' : ''}`}
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    {link.label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </div>
-
+          <NavLinks links={links} onLinkClick={closeMenu} />
+          
           <div className="nav-actions">
-            {user ? (
-              <>
-                <div className="user-profile">
-                  <div className="avatar">{user.name?.charAt(0) || 'U'}</div>
-                  <div>
-                    <strong>{user.name}</strong>
-                    <small>{user.isInstructor ? 'Instructor' : 'Coordinator'}</small>
-                  </div>
-                </div>
-                <button type="button" className="nav-button nav-button-muted" onClick={handleLogout}>
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <div className="nav-guest-actions">
-                <Link to="/register" className="nav-button nav-button-muted" onClick={() => setMenuOpen(false)}>
-                  Register
-                </Link>
-                <Link to="/login" className="nav-button" onClick={() => setMenuOpen(false)}>
-                  Sign In
-                </Link>
-              </div>
-            )}
+            <UserMenu user={user} onLogout={handleLogout} onLinkClick={closeMenu} />
           </div>
         </div>
       </div>

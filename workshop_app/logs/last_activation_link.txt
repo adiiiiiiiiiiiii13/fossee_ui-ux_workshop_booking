@@ -1,0 +1,1 @@
+http://localhost:8000/workshop/activate_user/4bc497c7cff6287fa714263bfdd49d26f834967730782ddc6d35e517501465b8

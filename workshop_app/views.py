@@ -1,3 +1,7 @@
+# LEGACY CODE - This file contains old template-based views
+# Most functionality has been moved to api_views.py for the React frontend
+# TODO: Remove this file after confirming all functionality is migrated
+
 from django.contrib import messages
 from django.db.models import Q
 from django.forms import inlineformset_factory, model_to_dict
