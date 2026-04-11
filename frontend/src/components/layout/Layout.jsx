@@ -1,14 +1,14 @@
-import React from 'react';
-import Navbar from './Navbar';
 import Footer from './Footer';
+import Navbar from './Navbar';
+import { useAuth } from '../../context/AuthContext';
 
 const Layout = ({ children }) => {
+  const { user } = useAuth();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Navbar isAuthenticated={false} />
-      <main style={{ flex: 1, paddingTop: '80px', paddingBottom: '40px' }}>
-        {children}
-      </main>
+    <div className="app-shell">
+      <Navbar user={user} />
+      <main className="app-main">{children}</main>
       <Footer />
     </div>
   );

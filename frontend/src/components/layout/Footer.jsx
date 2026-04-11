@@ -1,21 +1,25 @@
-import React from 'react';
 import './Footer.css';
 
 const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer-container">
-        <div className="footer-content">
-          <div className="footer-brand">
-            <span className="brand-icon">✧</span>
-            <span className="brand-text">FOSSEE</span>
-          </div>
-          <p className="footer-text">
-            Developed by FOSSEE group, IIT Bombay
+        <div>
+          <p className="eyebrow">Built for workshops</p>
+          <h3>FOSSEE booking experience in React</h3>
+          <p className="footer-copy">
+            Coordinators can propose workshops, instructors can manage approvals, and everyone can track workshop impact.
           </p>
         </div>
-        <div className="footer-bottom">
-          <p>&copy; {new Date().getFullYear()} IIT Bombay. All rights reserved.</p>
+        <div className="footer-meta">
+          <div>
+            <strong>IIT Bombay</strong>
+            <p>FOSSEE Group</p>
+          </div>
+          <div>
+            <strong>{new Date().getFullYear()}</strong>
+            <p>Workshop Portal</p>
+          </div>
         </div>
       </div>
     </footer>
