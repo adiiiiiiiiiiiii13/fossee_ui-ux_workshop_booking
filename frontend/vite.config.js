@@ -10,7 +10,10 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
-      // You can add more proxy paths like '/data' or '/workshop' if needed
+      '/workshop': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 })
