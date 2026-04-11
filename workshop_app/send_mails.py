@@ -4,6 +4,7 @@ import hashlib
 import logging
 import logging.config
 import os
+import sys
 
 import yaml
 import re
@@ -51,6 +52,33 @@ def generate_activation_key(username):
 	chars = letters + digits + punctuation
 	secret_key = get_random_string(randint(10,40), chars)
 	return hashlib.sha256((secret_key + username).encode('utf-8')).hexdigest()
+
+
+def _emit_registration_activation_link(activation_key):
+	"""Dev/local: stderr + log file + logger (survives logging.dictConfig on root)."""
+	if not activation_key:
+		return
+	if not (
+		settings.DEBUG
+		or "console.EmailBackend" in getattr(settings, "EMAIL_BACKEND", "")
+	):
+		return
+	link = "{0}/workshop/activate_user/{1}".format(
+		PRODUCTION_URL.rstrip("/"), activation_key
+	)
+	banner = "\n[registration] Activation link (open in browser):\n  {0}\n".format(link)
+	try:
+		sys.stderr.write(banner)
+		sys.stderr.flush()
+	except Exception:
+		pass
+	try:
+		out = path.join(settings.LOG_FOLDER, "last_activation_link.txt")
+		os.makedirs(path.dirname(out), exist_ok=True)
+		with open(out, "w", encoding="utf-8") as fh:
+			fh.write(link + "\n")
+	except Exception:
+		pass
 
 
 def send_smtp_email(request=None, subject=None, message=None,
@@ -104,10 +132,13 @@ def send_email(	request, call_on,
 	Email sending function while registration and
 	booking confirmation.
 	'''
+	if call_on == "Registration" and key:
+		_emit_registration_activation_link(key)
+
 	try:
 		with open(path.join(settings.LOG_FOLDER, 'emailconfig.yaml'), 'r') as configfile:
 			config_dict = yaml.load(configfile)
-		logging.config.dictConfig(config_dict)
+			logging.config.dictConfig(config_dict)
 	except:
 		print('File Not Found and Configuration Error')
 
