@@ -60,6 +60,24 @@ export default function Register() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     
+    try {
+      const result = await execute(
+        () => registerUser(form),
+        'Registration failed.'
+      );
+      
+      navigate('/activation-pending', {
+        state: {
+          devActivationUrl: result?.devActivationUrl || '',
+          email: form.email,
+        },
+      });
+    } catch (err) {
+      const fieldErrors = err?.response?.data?.errors || {};
+      setFormErrors(fieldErrors);
+    }
+  };
+
   return (
     <div className="auth-shell">
       <Card className="auth-card auth-card-wide">
