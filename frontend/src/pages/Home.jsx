@@ -1,46 +1,83 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
-import Button from '../components/ui/Button';
+import { useAuth } from '../context/AuthContext';
 
-const Home = () => {
-  const navigate = useNavigate();
+export default function Home() {
+  const { user } = useAuth();
+
+  const quickLinks = user
+    ? user.isInstructor
+      ? [
+          { title: 'Review pending requests', to: '/dashboard', cta: 'Open dashboard' },
+          { title: 'View your team stats', to: '/team-stats', cta: 'Open team stats' },
+          { title: 'Manage workshop catalogue', to: '/types', cta: 'Open workshop types' },
+        ]
+      : [
+          { title: 'Track your bookings', to: '/status', cta: 'Open my status' },
+          { title: 'Propose a fresh workshop', to: '/propose', cta: 'Create proposal' },
+          { title: 'Update your profile', to: '/profile', cta: 'Open profile' },
+        ]
+    : [
+        { title: 'Create a coordinator account', to: '/register', cta: 'Register now' },
+        { title: 'Browse workshop types', to: '/types', cta: 'See all workshops' },
+        { title: 'Explore public statistics', to: '/statistics', cta: 'View statistics' },
+      ];
 
   return (
-    <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem' }}>
-      <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-        <h1 style={{ fontSize: '3rem', fontWeight: '700', marginBottom: '1rem', letterSpacing: '-1px' }}>
-          FOSSEE Workshops
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-          A minimal, fast, and modern interface for managing workshop bookings and tracking completion statistics.
-        </p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-        <Card>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.8rem' }}>Welcome Back</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-            Sign in to manage your workshop proposals and check real-time attendance stats.
+    <div className="page-shell">
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <p className="eyebrow">FOSSEE Workshop Portal</p>
+          <h1>One responsive place to book, approve, and track workshops.</h1>
+          <p className="hero-text">
+            This React frontend brings the booking flow, workshop catalogue, team insights, and profiles into a cleaner
+            mobile-first experience for coordinators and instructors.
           </p>
+          <div className="hero-actions">
+            {user ? (
+              <Link className="button-link button-link-primary" to={user.isInstructor ? '/dashboard' : '/status'}>
+                Go to workspace
+              </Link>
+            ) : (
+              <>
+                <Link className="button-link button-link-primary" to="/login">Sign In</Link>
+                <Link className="button-link button-link-muted" to="/register">Create Account</Link>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="hero-metrics">
           <div>
-            <Button fullWidth onClick={() => navigate('/login')}>Go to Login</Button>
+            <strong>Mobile-first</strong>
+            <span>Fast on phone screens before anything else.</span>
           </div>
-        </Card>
+          <div>
+            <strong>Role-aware</strong>
+            <span>Coordinators and instructors see what matters to them.</span>
+          </div>
+          <div>
+            <strong>Data-backed</strong>
+            <span>Every page is connected to live Django data endpoints.</span>
+          </div>
+        </div>
+      </section>
 
-        <Card>
-          <h2 style={{ fontSize: '1.3rem', marginBottom: '0.8rem' }}>Browse Available</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
-            You don't need to be authenticated to view current public workshops and general statistics.
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-             <Button variant="outline" onClick={() => navigate('/types')}>View All Workshops</Button>
-             <Button variant="outline" onClick={() => navigate('/statistics')}>Global Statistics</Button>
-          </div>
-        </Card>
+      <section className="section-heading">
+        <div>
+          <p className="eyebrow">Quick actions</p>
+          <h2>Jump straight into the flow</h2>
+        </div>
+      </section>
+
+      <div className="feature-grid">
+        {quickLinks.map((item) => (
+          <Card key={item.to} className="feature-card">
+            <h3>{item.title}</h3>
+            <p>{item.cta} and continue in the responsive workspace.</p>
+            <Link className="text-link" to={item.to}>{item.cta}</Link>
+          </Card>
+        ))}
       </div>
     </div>
   );
-};
-
-export default Home;
+}

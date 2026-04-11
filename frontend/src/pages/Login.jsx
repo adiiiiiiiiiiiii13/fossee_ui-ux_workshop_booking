@@ -1,81 +1,80 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
-import Button from '../components/ui/Button';
-import { login } from '../services/authService';
+import { useAuth } from '../context/AuthContext';
+import { getErrorMessage } from '../services/api';
 
-const Login = () => {
+export default function Login() {
+  const { loginUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [form, setForm] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e) =>
-    setForm((prev) => ({ ...prev, [e.target.id]: e.target.value }));
+  const redirectTo = location.state?.from?.pathname;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setForm((current) => ({ ...current, [name]: value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
     setError('');
+
     try {
-      await login(form);
-      // Django redirects to dashboard on success; navigate there in React too
-      navigate('/dashboard');
+      const user = await loginUser(form);
+      navigate(redirectTo || (user.isInstructor ? '/dashboard' : '/status'));
     } catch (err) {
-      setError('Invalid credentials. Please try again.');
+      setError(getErrorMessage(err, 'Unable to sign in right now.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '4rem auto', padding: '0 1rem' }}>
-      <Card>
-        <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>Sign In</h2>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', textAlign: 'center', fontSize: '0.9rem' }}>
-          Welcome back to FOSSEE Workshops
+    <div className="auth-shell">
+      <Card className="auth-card">
+        <p className="eyebrow">Welcome back</p>
+        <h1>Sign in to your workshop workspace</h1>
+        <p className="muted-text">
+          Use your existing account to manage workshop proposals, approvals, comments, and profile details.
         </p>
 
-        {error && (
-          <p style={{ color: '#f87171', background: 'rgba(248,113,113,0.1)', padding: '0.75rem 1rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>
-            {error}
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit}>
+        <form className="form-stack" onSubmit={handleSubmit}>
           <Input
-            label="Username"
             id="username"
-            type="text"
-            placeholder="your_username"
+            name="username"
+            label="Username"
+            placeholder="Enter your username"
             value={form.username}
             onChange={handleChange}
             required
           />
           <Input
-            label="Password"
             id="password"
+            name="password"
             type="password"
-            placeholder="••••••••"
+            label="Password"
+            placeholder="Enter your password"
             value={form.password}
             onChange={handleChange}
             required
           />
-          <div style={{ marginTop: '2rem' }}>
-            <Button fullWidth type="submit" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign In'}
-            </Button>
-          </div>
+          {error ? <div className="message-banner message-error">{error}</div> : null}
+          <Button type="submit" fullWidth disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
         </form>
 
-        <p style={{ marginTop: '1.5rem', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Don't have an account?{' '}
-          <a href="/register" style={{ color: 'var(--accent-primary)' }}>Register here</a>
+        <p className="auth-footer">
+          Need a coordinator account? <Link to="/register">Create one here</Link>.
         </p>
       </Card>
     </div>
   );
-};
-
-export default Login;
+}
