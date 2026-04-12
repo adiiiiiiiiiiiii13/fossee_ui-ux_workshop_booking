@@ -9,12 +9,12 @@ export default function Home() {
     ? user.isInstructor
       ? [
           { title: 'Review pending requests', to: '/dashboard', cta: 'Open dashboard' },
-          { title: 'View your team stats', to: '/team-stats', cta: 'Open team stats' },
+          { title: 'View your team statistics', to: '/team-stats', cta: 'Open team stats' },
           { title: 'Manage workshop catalogue', to: '/types', cta: 'Open workshop types' },
         ]
       : [
           { title: 'Track your bookings', to: '/status', cta: 'Open my status' },
-          { title: 'Propose a fresh workshop', to: '/propose', cta: 'Create proposal' },
+          { title: 'Propose a new workshop', to: '/propose', cta: 'Create proposal' },
           { title: 'Update your profile', to: '/profile', cta: 'Open profile' },
         ]
     : [
@@ -28,10 +28,10 @@ export default function Home() {
       <section className="hero-panel">
         <div className="hero-copy">
           <p className="eyebrow">FOSSEE Workshop Portal</p>
-          <h1>One responsive place to book, approve, and track workshops.</h1>
+          <h1>Comprehensive platform to book, approve, and track workshops.</h1>
           <p className="hero-text">
-            This React frontend brings the booking flow, workshop catalogue, team insights, and profiles into a cleaner
-            mobile-first experience for coordinators and instructors.
+            Streamlined workshop management system that brings together booking workflows, workshop catalogues, 
+            team insights, and user profiles in a unified platform for coordinators and instructors.
           </p>
           <div className="hero-actions">
             {user ? (
@@ -48,16 +48,16 @@ export default function Home() {
         </div>
         <div className="hero-metrics">
           <div>
-            <strong>Mobile-first</strong>
-            <span>Fast on phone screens before anything else.</span>
+            <strong>Optimized</strong>
+            <span>Fast performance across all devices and screen sizes.</span>
           </div>
           <div>
-            <strong>Role-aware</strong>
-            <span>Coordinators and instructors see what matters to them.</span>
+            <strong>Role-based</strong>
+            <span>Coordinators and instructors access relevant features and data.</span>
           </div>
           <div>
-            <strong>Data-backed</strong>
-            <span>Every page is connected to live Django data endpoints.</span>
+            <strong>Real-time</strong>
+            <span>Live data integration with comprehensive backend systems.</span>
           </div>
         </div>
       </section>
@@ -65,7 +65,7 @@ export default function Home() {
       <section className="section-heading">
         <div>
           <p className="eyebrow">Quick actions</p>
-          <h2>Jump straight into the flow</h2>
+          <h2>Access key features instantly</h2>
         </div>
       </section>
 
@@ -73,7 +73,7 @@ export default function Home() {
         {quickLinks.map((item) => (
           <Card key={item.to} className="feature-card">
             <h3>{item.title}</h3>
-            <p>{item.cta} and continue in the responsive workspace.</p>
+            <p>{item.cta} and manage your workshop activities efficiently.</p>
             <Link className="text-link" to={item.to}>{item.cta}</Link>
           </Card>
         ))}
