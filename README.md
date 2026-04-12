@@ -8,6 +8,177 @@ This is a workshop booking system where coordinators can propose workshops, inst
 
 The main goal was to take the existing Django backend and give it a modern, responsive frontend that actually looks good and works well on mobile devices.
 
+## Visual Showcase
+
+### Before vs After Comparison
+
+#### Homepage Transformation
+<div align="center">
+  <img src="assets/home-before.jpeg" alt="Homepage Before" width="45%">
+  <img src="assets/home-after.png" alt="Homepage After" width="45%">
+  <br>
+  <em>Left: Original homepage | Right: Modern redesigned homepage</em>
+</div>
+
+#### Registration Form Enhancement
+<div align="center">
+  <img src="assets/registration-before.png.jpeg" alt="Registration Before" width="45%">
+  <img src="assets/registration-after.png" alt="Registration After" width="45%">
+  <br>
+  <em>Left: Original long form | Right: Compact sectioned form</em>
+</div>
+
+#### Statistics Dashboard Improvement
+<div align="center">
+  <img src="assets/statistics-before.png.jpeg" alt="Statistics Before" width="45%">
+  <img src="assets/statistics-after.png" alt="Statistics After" width="45%">
+  <br>
+  <em>Left: Basic statistics view | Right: Enhanced dashboard with better UX</em>
+</div>
+
+#### Sign In Page Modernization
+<div align="center">
+  <img src="assets/sign_in-before.png.jpeg" alt="Sign In Before" width="45%">
+  <img src="assets/sign_in-after.png" alt="Sign In After" width="45%">
+  <br>
+  <em>Left: Original login form | Right: Clean modern design</em>
+</div>
+
+#### Workshop Types Enhancement
+<div align="center">
+  <img src="assets/workshoptypes-after.png" alt="Workshop Types After" width="70%">
+  <br>
+  <em>Modern workshop types listing with improved card design</em>
+</div>
+
+## Design Principles & Approach
+
+### What Design Principles Guided Your Improvements?
+
+**1. Mobile-First Responsive Design**
+- Started with mobile layouts and progressively enhanced for larger screens
+- Ensured touch-friendly interface elements (minimum 44px touch targets)
+- Prioritized content hierarchy for small screens first
+
+**2. Clean Visual Hierarchy**
+- Used consistent typography scale (headings, body text, captions)
+- Implemented proper spacing system using CSS custom properties
+- Applied the 60-30-10 color rule (neutral base, accent colors, highlights)
+
+**3. Minimalist Interface Design**
+- Removed unnecessary visual clutter and decorative elements
+- Focused on content-first approach with plenty of whitespace
+- Used subtle shadows and borders instead of heavy visual elements
+
+**4. Consistent Component System**
+- Created reusable UI components (Button, Card, Input, etc.)
+- Maintained consistent styling patterns across all pages
+- Implemented a unified color scheme and spacing system
+
+**5. User-Centered Experience**
+- Grouped related functionality together (form sections, navigation)
+- Provided clear feedback for user actions (loading states, error messages)
+- Optimized common user flows (registration, login, workshop management)
+
+### How Did You Ensure Responsiveness Across Devices?
+
+**CSS Grid & Flexbox Strategy:**
+```css
+/* Mobile-first approach */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr; /* Single column on mobile */
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr 1fr; /* Two columns on tablet+ */
+  }
+}
+```
+
+**Responsive Navigation:**
+- Implemented hamburger menu for mobile devices
+- Used CSS transforms for smooth menu animations
+- Desktop navigation shows all links horizontally
+
+**Flexible Typography:**
+- Used relative units (rem, em) instead of fixed pixels
+- Implemented responsive font scaling
+- Ensured readable text on all screen sizes
+
+**Touch-Friendly Design:**
+- Minimum 44px touch targets for buttons and links
+- Adequate spacing between interactive elements
+- Optimized form inputs for mobile keyboards
+
+**Viewport Optimization:**
+- Added viewport meta tag for proper mobile rendering
+- Used CSS media queries for different screen breakpoints
+- Tested on various device sizes using browser dev tools
+
+### What Trade-offs Did You Make Between Design and Performance?
+
+**Custom CSS vs Framework:**
+- **Trade-off:** Wrote custom CSS instead of using Bootstrap/Material-UI
+- **Benefit:** Smaller bundle size, complete design control
+- **Cost:** More development time, need to maintain custom styles
+
+**Component Granularity:**
+- **Trade-off:** Created many small components vs fewer large ones
+- **Benefit:** Better reusability, easier maintenance
+- **Cost:** Slightly more complex file structure
+
+**Animation & Transitions:**
+- **Trade-off:** Added smooth animations for better UX
+- **Benefit:** More polished, professional feel
+- **Cost:** Minor performance impact on older devices
+
+**Image Optimization:**
+- **Trade-off:** Used modern image formats where possible
+- **Benefit:** Faster loading times
+- **Cost:** Need fallbacks for older browsers
+
+**Bundle Size Considerations:**
+- **Trade-off:** Custom hooks vs external libraries
+- **Benefit:** Smaller bundle, better understanding of code
+- **Cost:** More code to maintain, potential bugs
+
+### What Was the Most Challenging Part and How Did You Approach It?
+
+**Challenge 1: Making the Registration Form Compact**
+- **Problem:** 13 form fields created a very long, overwhelming form
+- **Approach:** 
+  - Grouped related fields into logical sections
+  - Used CSS Grid to create two-column layouts
+  - Added visual section headers for better organization
+  - Implemented responsive design that stacks on mobile
+
+**Challenge 2: Navbar Responsiveness**
+- **Problem:** Desktop navigation disappeared after component refactoring
+- **Approach:**
+  - Debugged CSS media queries and component structure
+  - Added `!important` declarations where needed
+  - Extracted reusable components while maintaining functionality
+  - Tested across different screen sizes
+
+**Challenge 3: Maintaining Design Consistency**
+- **Problem:** Different pages had inconsistent styling patterns
+- **Approach:**
+  - Created a design system with reusable components
+  - Established CSS custom properties for colors and spacing
+  - Built custom hooks for common patterns (useForm, useAsync)
+  - Documented component usage patterns
+
+**Challenge 4: Balancing Modern Design with Existing Backend**
+- **Problem:** Backend APIs weren't designed for modern frontend patterns
+- **Approach:**
+  - Created service layer to abstract API calls
+  - Added proper error handling and loading states
+  - Maintained backward compatibility with existing endpoints
+  - Gradually improved API responses without breaking changes
+
 ## Tech Stack
 
 **Frontend:**
@@ -104,17 +275,6 @@ I made a custom `useAsync` hook that handles loading states and errors consisten
 - **Role-based access** - different features for coordinators vs instructors
 - **Mobile-friendly navigation** with hamburger menu
 - **Real-time form validation** with helpful error messages
-
-## Design Decisions
-
-### Why Custom CSS Instead of a Framework?
-I wanted to learn CSS properly and keep the bundle size small. Bootstrap or Material-UI would have been faster, but I felt like I'd learn more doing it myself. Plus, the design requirements were specific enough that a framework might have gotten in the way.
-
-### Component Structure
-I tried to follow the "composition over inheritance" principle. Instead of having one giant component, I made smaller pieces that can be combined. This made testing easier (when I actually wrote tests) and made the code more reusable.
-
-### State Management
-I used React Context for global state (user auth) and local state for everything else. Didn't need Redux because the app isn't that complex. Context worked fine for passing user data around.
 
 ## Challenges & Solutions
 
